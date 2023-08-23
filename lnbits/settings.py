@@ -235,6 +235,12 @@ class LnTipsFundingSource(LNbitsSettings):
     lntips_invoice_key: Optional[str] = Field(default=None)
 
 
+class BreezSdkFundingSource(LNbitsSettings):
+    breez_api_key: Optional[str] = Field(default=None)
+    breez_greenlight_seed: Optional[str] = Field(default=None)
+    breez_greenlight_invite_code: Optional[str] = Field(default=None)
+
+
 class LightningSettings(LNbitsSettings):
     lightning_invoice_expiry: int = Field(default=3600)
 
@@ -254,6 +260,7 @@ class FundingSourcesSettings(
     OpenNodeFundingSource,
     SparkFundingSource,
     LnTipsFundingSource,
+    BreezSdkFundingSource,
 ):
     lnbits_backend_wallet_class: str = Field(default="VoidWallet")
 
@@ -408,6 +415,7 @@ class SuperUserSettings(LNbitsSettings):
             "ZBDWallet",
             "LNbitsWallet",
             "OpenNodeWallet",
+            "BreezSdkWallet",
         ]
     )
 
