@@ -185,7 +185,6 @@ class Connection(Compat):
             filters = Filters()
         clause = filters.where(where)
         parsed_values = filters.values(values)
-        group_by = f"GROUP BY {group_by}" if group_by else ""
 
         group_by_string = ""
         if group_by:

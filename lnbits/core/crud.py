@@ -182,7 +182,7 @@ async def get_accounts(
         [],
         filters=filters,
         model=Account,
-        group_by="accounts.id, wallets.id",
+        group_by=["accounts.id", "wallets.id"],
     )
 
 
