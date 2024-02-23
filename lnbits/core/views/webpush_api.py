@@ -24,7 +24,7 @@ from ..crud import (
     get_webpush_subscription,
 )
 
-webpush_router = APIRouter(prefix="/api/v1/webpush", tags=["webpush"])
+webpush_router = APIRouter(prefix="/api/v1/webpush", tags=["Webpush"])
 
 
 @webpush_router.post("/", status_code=HTTPStatus.CREATED)

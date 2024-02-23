@@ -19,7 +19,7 @@ from ..crud import (
     get_tinyurl_by_url,
 )
 
-tinyurl_router = APIRouter()
+tinyurl_router = APIRouter(tags=["Tinyurl"])
 
 
 @tinyurl_router.post(

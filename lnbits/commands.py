@@ -12,7 +12,10 @@ from packaging import version
 
 from lnbits.core.models import User
 from lnbits.core.services import check_admin_settings
-from lnbits.core.views.api import api_install_extension, api_uninstall_extension
+from lnbits.core.views.extension_api import (
+    api_install_extension,
+    api_uninstall_extension,
+)
 from lnbits.settings import settings
 
 from .core import db as core_db
