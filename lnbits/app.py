@@ -7,6 +7,7 @@ import shutil
 import signal
 import sys
 import traceback
+from contextlib import asynccontextmanager
 from hashlib import sha256
 from http import HTTPStatus
 from pathlib import Path
@@ -64,6 +65,61 @@ from .tasks import (
 )
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # wait till migration is done
+    await migrate_databases()
+
+    # setup admin settings
+    await check_admin_settings()
+    await check_webpush_settings()
+
+    log_server_info()
+
+    # initialize WALLET
+    try:
+        set_wallet_class()
+    except Exception as e:
+        logger.error(f"Error initializing {settings.lnbits_backend_wallet_class}: {e}")
+        set_void_wallet_class()
+
+    # initialize funding source
+    await check_funding_source()
+
+    # register core routes
+    init_core_routers(app)
+
+    # check extensions after restart
+    await check_installed_extensions(app)
+
+    # register extension routes
+    for ext in get_valid_extensions(False):
+        try:
+            register_ext_routes(app, ext)
+        except Exception as e:
+            logger.error(f"Could not load extension `{ext.code}`: {str(e)}")
+
+    if settings.lnbits_admin_ui:
+        initialize_server_logger()
+
+    # initialize tasks
+    create_permanent_task(check_pending_payments)
+    create_permanent_task(invoice_listener)
+    create_permanent_task(internal_invoice_listener)
+    create_permanent_task(cache.invalidate_forever)
+    register_task_listeners()
+    register_killswitch()
+
+    yield
+
+    # shutdown event
+    cancel_all_tasks()
+    # wait a bit to allow them to finish, so that cleanup can run without problems
+    await asyncio.sleep(0.1)
+    WALLET = get_wallet_class()
+    await WALLET.cleanup()
+
+
 def create_app() -> FastAPI:
     configure_logger()
     app = FastAPI(
@@ -73,6 +129,7 @@ def create_app() -> FastAPI:
             "accounts system with plugins."
         ),
         version=settings.version,
+        lifespan=lifespan,
         license_info={
             "name": "MIT License",
             "url": "https://raw.githubusercontent.com/lnbits/lnbits/main/LICENSE",
@@ -113,10 +170,7 @@ def create_app() -> FastAPI:
     add_ip_block_middleware(app)
     add_ratelimit_middleware(app)
 
-    register_startup(app)
-    register_async_tasks(app)
     register_exception_handlers(app)
-    register_shutdown(app)
 
     return app
 
@@ -281,17 +335,6 @@ async def restore_installed_extension(app: FastAPI, ext: InstallableExtension):
         ext.nofiy_upgrade()
 
 
-def register_routes(app: FastAPI) -> None:
-    """Register FastAPI routes / LNbits extensions."""
-    init_core_routers(app)
-
-    for ext in get_valid_extensions(False):
-        try:
-            register_ext_routes(app, ext)
-        except Exception as e:
-            logger.error(f"Could not load extension `{ext.code}`: {str(e)}")
-
-
 def register_custom_extensions_path():
     if settings.has_default_extension_path:
         return
@@ -367,55 +410,6 @@ def register_ext_routes(app: FastAPI, ext: Extension) -> None:
     app.include_router(router=ext_route, prefix=prefix)
 
 
-def register_startup(app: FastAPI):
-    @app.on_event("startup")
-    async def lnbits_startup():
-        try:
-            # wait till migration is done
-            await migrate_databases()
-
-            # setup admin settings
-            await check_admin_settings()
-            await check_webpush_settings()
-
-            log_server_info()
-
-            # initialize WALLET
-            try:
-                set_wallet_class()
-            except Exception as e:
-                logger.error(
-                    f"Error initializing {settings.lnbits_backend_wallet_class}: {e}"
-                )
-                set_void_wallet_class()
-
-            # initialize funding source
-            await check_funding_source()
-
-            # check extensions after restart
-            await check_installed_extensions(app)
-
-            # register core and extension routes
-            register_routes(app)
-
-            if settings.lnbits_admin_ui:
-                initialize_server_logger()
-
-        except Exception as e:
-            logger.error(str(e))
-            raise ImportError("Failed to run 'startup' event.")
-
-
-def register_shutdown(app: FastAPI):
-    @app.on_event("shutdown")
-    async def on_shutdown():
-        cancel_all_tasks()
-        # wait a bit to allow them to finish, so that cleanup can run without problems
-        await asyncio.sleep(0.1)
-        WALLET = get_wallet_class()
-        await WALLET.cleanup()
-
-
 def initialize_server_logger():
     super_user_hash = sha256(settings.super_user.encode("utf-8")).hexdigest()
 
@@ -461,18 +455,6 @@ def get_db_vendor_name():
             else "SQLite"
         )
     )
-
-
-def register_async_tasks(app):
-    @app.on_event("startup")
-    async def listeners():
-        create_permanent_task(check_pending_payments)
-        create_permanent_task(invoice_listener)
-        create_permanent_task(internal_invoice_listener)
-        create_permanent_task(cache.invalidate_forever)
-        register_task_listeners()
-        register_killswitch()
-        # await run_deferred_async() # calle: doesn't do anyting?
 
 
 def register_exception_handlers(app: FastAPI):

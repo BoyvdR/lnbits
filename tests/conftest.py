@@ -3,6 +3,7 @@ import asyncio
 from time import time
 
 import uvloop
+from asgi_lifespan import LifespanManager
 
 uvloop.install()
 
@@ -49,17 +50,16 @@ def event_loop():
 async def app():
     clean_database(settings)
     app = create_app()
-    await app.router.startup()
     settings.first_install = False
-    yield app
-    await app.router.shutdown()
+    async with LifespanManager(app) as manager:
+        yield manager.app
 
 
 @pytest_asyncio.fixture(scope="session")
 async def client(app):
-    client = AsyncClient(app=app, base_url=f"http://{settings.host}:{settings.port}")
-    yield client
-    await client.aclose()
+    url = f"http://{settings.host}:{settings.port}"
+    async with AsyncClient(app=app, base_url=url) as client:
+        yield client
 
 
 @pytest.fixture(scope="session")
