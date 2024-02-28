@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import (
     APIRouter,
@@ -7,12 +7,15 @@ from fastapi import (
 )
 
 from lnbits.core.models import (
+    BaseWallet,
     CreateWallet,
+    User,
     Wallet,
     WalletType,
 )
 from lnbits.decorators import (
     WalletTypeInfo,
+    check_user_exists,
     get_key_type,
     require_admin_key,
 )
@@ -36,6 +39,15 @@ async def api_wallet(wallet: WalletTypeInfo = Depends(get_key_type)):
         }
     else:
         return {"name": wallet.wallet.name, "balance": wallet.wallet.balance_msat}
+
+
+@wallet_router.get(
+    "/list",
+    name="Wallets",
+    description="Get basic info for all of user's wallets.",
+)
+async def api_wallets(user: User = Depends(check_user_exists)) -> List[BaseWallet]:
+    return [BaseWallet(**w.dict()) for w in user.wallets]
 
 
 @wallet_router.put("/{new_name}")

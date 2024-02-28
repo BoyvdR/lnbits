@@ -15,7 +15,6 @@ from fastapi.exceptions import HTTPException
 from starlette.responses import StreamingResponse
 
 from lnbits.core.models import (
-    BaseWallet,
     ConversionData,
     CreateLnurlAuth,
     CreateWallet,
@@ -23,7 +22,6 @@ from lnbits.core.models import (
 )
 from lnbits.decorators import (
     WalletTypeInfo,
-    check_user_exists,
     get_key_type,
     require_admin_key,
 )
@@ -53,66 +51,6 @@ api_router = APIRouter(tags=["Core"])
 @api_router.get("/api/v1/health", status_code=HTTPStatus.OK)
 async def health():
     return
-
-
-@api_router.get("/api/v1/wallet")
-async def api_wallet(wallet: WalletTypeInfo = Depends(get_key_type)):
-    if wallet.wallet_type == WalletType.admin:
-        return {
-            "id": wallet.wallet.id,
-            "name": wallet.wallet.name,
-            "balance": wallet.wallet.balance_msat,
-        }
-    else:
-        return {"name": wallet.wallet.name, "balance": wallet.wallet.balance_msat}
-
-
-@api_router.get(
-    "/api/v1/wallets",
-    name="Wallets",
-    description="Get basic info for all of user's wallets.",
-)
-async def api_wallets(user: User = Depends(check_user_exists)) -> List[BaseWallet]:
-    return [BaseWallet(**w.dict()) for w in user.wallets]
-
-
-@api_router.put("/api/v1/wallet/{new_name}")
-async def api_update_wallet_name(
-    new_name: str, wallet: WalletTypeInfo = Depends(require_admin_key)
-):
-    await update_wallet(wallet.wallet.id, new_name)
-    return {
-        "id": wallet.wallet.id,
-        "name": wallet.wallet.name,
-        "balance": wallet.wallet.balance_msat,
-    }
-
-
-@api_router.patch("/api/v1/wallet", response_model=Wallet)
-async def api_update_wallet(
-    name: Optional[str] = Body(None),
-    currency: Optional[str] = Body(None),
-    wallet: WalletTypeInfo = Depends(require_admin_key),
-):
-    return await update_wallet(wallet.wallet.id, name, currency)
-
-
-@api_router.delete("/api/v1/wallet")
-async def api_delete_wallet(
-    wallet: WalletTypeInfo = Depends(require_admin_key),
-) -> None:
-    await delete_wallet(
-        user_id=wallet.wallet.user,
-        wallet_id=wallet.wallet.id,
-    )
-
-
-@api_router.post("/api/v1/wallet", response_model=Wallet)
-async def api_create_wallet(
-    data: CreateWallet,
-    wallet: WalletTypeInfo = Depends(require_admin_key),
-) -> Wallet:
-    return await create_wallet(user_id=wallet.wallet.user, wallet_name=data.name)
 
 
 @api_router.post("/api/v1/account", response_model=Wallet)
