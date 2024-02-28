@@ -52,7 +52,7 @@ extension_router = APIRouter(
 )
 
 
-@extension_router.post("/")
+@extension_router.post("")
 async def api_install_extension(
     data: CreateExtension,
     user: User = Depends(check_admin),

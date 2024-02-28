@@ -29,7 +29,7 @@ from ..crud import (
 wallet_router = APIRouter(prefix="/api/v1/wallet", tags=["Wallet"])
 
 
-@wallet_router.get("/")
+@wallet_router.get("")
 async def api_wallet(wallet: WalletTypeInfo = Depends(get_key_type)):
     if wallet.wallet_type == WalletType.admin:
         return {
@@ -62,7 +62,7 @@ async def api_update_wallet_name(
     }
 
 
-@wallet_router.patch("/", response_model=Wallet)
+@wallet_router.patch("", response_model=Wallet)
 async def api_update_wallet(
     name: Optional[str] = Body(None),
     currency: Optional[str] = Body(None),
@@ -71,7 +71,7 @@ async def api_update_wallet(
     return await update_wallet(wallet.wallet.id, name, currency)
 
 
-@wallet_router.delete("/")
+@wallet_router.delete("")
 async def api_delete_wallet(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> None:
@@ -81,7 +81,7 @@ async def api_delete_wallet(
     )
 
 
-@wallet_router.post("/", response_model=Wallet)
+@wallet_router.post("", response_model=Wallet)
 async def api_create_wallet(
     data: CreateWallet,
     wallet: WalletTypeInfo = Depends(require_admin_key),

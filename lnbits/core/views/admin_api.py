@@ -63,7 +63,7 @@ async def api_monitor():
     }
 
 
-@admin_router.get("/api/v1/settings/", response_model=Optional[AdminSettings])
+@admin_router.get("/api/v1/settings", response_model=Optional[AdminSettings])
 async def api_get_settings(
     user: User = Depends(check_admin),
 ) -> Optional[AdminSettings]:
@@ -72,7 +72,7 @@ async def api_get_settings(
 
 
 @admin_router.put(
-    "/api/v1/settings/",
+    "/api/v1/settings",
     status_code=HTTPStatus.OK,
 )
 async def api_update_settings(data: UpdateSettings, user: User = Depends(check_admin)):
@@ -85,7 +85,7 @@ async def api_update_settings(data: UpdateSettings, user: User = Depends(check_a
 
 
 @admin_router.delete(
-    "/api/v1/settings/",
+    "/api/v1/settings",
     status_code=HTTPStatus.OK,
     dependencies=[Depends(check_super_user)],
 )
@@ -95,7 +95,7 @@ async def api_delete_settings() -> None:
 
 
 @admin_router.get(
-    "/api/v1/restart/",
+    "/api/v1/restart",
     status_code=HTTPStatus.OK,
     dependencies=[Depends(check_super_user)],
 )
@@ -105,7 +105,7 @@ async def api_restart_server() -> dict[str, str]:
 
 
 @admin_router.put(
-    "/api/v1/topup/",
+    "/api/v1/topup",
     name="Topup",
     status_code=HTTPStatus.OK,
     dependencies=[Depends(check_super_user)],
@@ -129,7 +129,7 @@ async def api_topup_balance(data: CreateTopup) -> dict[str, str]:
 
 
 @admin_router.get(
-    "/api/v1/backup/",
+    "/api/v1/backup",
     status_code=HTTPStatus.OK,
     dependencies=[Depends(check_super_user)],
     response_class=FileResponse,

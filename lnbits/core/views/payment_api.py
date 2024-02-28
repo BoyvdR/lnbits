@@ -69,7 +69,7 @@ payment_router = APIRouter(prefix="/api/v1/payments", tags=["Payments"])
 
 
 @payment_router.get(
-    "/",
+    "",
     name="Payment List",
     summary="get list of payments",
     response_description="list of payments",
@@ -243,7 +243,7 @@ async def api_payments_pay_invoice(
 
 
 @payment_router.post(
-    "/",
+    "",
     summary="Create or pay an invoice",
     description="""
         This endpoint can be used both to generate and pay a BOLT11 invoice.
