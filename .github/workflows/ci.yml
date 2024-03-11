@@ -62,6 +62,7 @@ jobs:
       backend-wallet-class: ${{ matrix.backend-wallet-class }}
 
   jmeter:
+    needs: [ lint ]
     strategy:
       matrix:
         python-version: ["3.9"]
