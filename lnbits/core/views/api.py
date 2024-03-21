@@ -39,13 +39,13 @@ from lnbits.core.models import (
     CreateLnurlAuth,
     CreateWallet,
     DecodePayment,
+    KeyType,
     Payment,
     PaymentFilters,
     PaymentHistoryPoint,
     Query,
     User,
     Wallet,
-    WalletType,
 )
 from lnbits.db import Filters, Page
 from lnbits.decorators import (
@@ -119,7 +119,7 @@ async def health():
 
 @api_router.get("/api/v1/wallet")
 async def api_wallet(wallet: WalletTypeInfo = Depends(get_key_type)):
-    if wallet.wallet_type == WalletType.admin:
+    if wallet.key_type == KeyType.admin:
         return {
             "id": wallet.wallet.id,
             "name": wallet.wallet.name,
@@ -197,7 +197,7 @@ async def api_create_account(data: CreateWallet) -> Wallet:
     openapi_extra=generate_filter_params_openapi(PaymentFilters),
 )
 async def api_payments(
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    wallet: WalletTypeInfo = Depends(require_admin_key),
     filters: Filters = Depends(parse_filters(PaymentFilters)),
 ):
     await update_pending_payments(wallet.wallet.id)
@@ -216,7 +216,7 @@ async def api_payments(
     openapi_extra=generate_filter_params_openapi(PaymentFilters),
 )
 async def api_payments_history(
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    wallet: WalletTypeInfo = Depends(require_admin_key),
     group: DateTrunc = Query("day"),
     filters: Filters[PaymentFilters] = Depends(parse_filters(PaymentFilters)),
 ):
@@ -233,7 +233,7 @@ async def api_payments_history(
     openapi_extra=generate_filter_params_openapi(PaymentFilters),
 )
 async def api_payments_paginated(
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
     filters: Filters = Depends(parse_filters(PaymentFilters)),
 ):
     await update_pending_payments(wallet.wallet.id)
@@ -379,7 +379,7 @@ async def api_payments_create(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
     invoiceData: CreateInvoice = Body(...),
 ):
-    if invoiceData.out is True and wallet.wallet_type == WalletType.admin:
+    if invoiceData.out is True and wallet.key_type == KeyType.admin:
         if not invoiceData.bolt11:
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST,
@@ -524,7 +524,7 @@ async def subscribe_wallet_invoices(request: Request, wallet: Wallet):
 
 @api_router.get("/api/v1/payments/sse")
 async def api_payments_sse(
-    request: Request, wallet: WalletTypeInfo = Depends(get_key_type)
+    request: Request, wallet: WalletTypeInfo = Depends(require_invoice_key)
 ):
     return EventSourceResponse(
         subscribe_wallet_invoices(request, wallet.wallet),
@@ -577,7 +577,9 @@ async def api_payment(payment_hash, X_Api_Key: Optional[str] = Header(None)):
 
 
 @api_router.get("/api/v1/lnurlscan/{code}")
-async def api_lnurlscan(code: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_lnurlscan(
+    code: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
+):
     try:
         url = str(lnurl_decode(code))
         domain = urlparse(url).netloc
