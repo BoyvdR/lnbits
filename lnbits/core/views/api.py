@@ -197,7 +197,7 @@ async def api_create_account(data: CreateWallet) -> Wallet:
     openapi_extra=generate_filter_params_openapi(PaymentFilters),
 )
 async def api_payments(
-    wallet: WalletTypeInfo = Depends(require_admin_key),
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
     filters: Filters = Depends(parse_filters(PaymentFilters)),
 ):
     await update_pending_payments(wallet.wallet.id)
@@ -216,7 +216,7 @@ async def api_payments(
     openapi_extra=generate_filter_params_openapi(PaymentFilters),
 )
 async def api_payments_history(
-    wallet: WalletTypeInfo = Depends(require_admin_key),
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
     group: DateTrunc = Query("day"),
     filters: Filters[PaymentFilters] = Depends(parse_filters(PaymentFilters)),
 ):
