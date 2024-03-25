@@ -361,7 +361,7 @@ class EnvSettings(LNbitsSettings):
     debug: bool = Field(default=False)
     debug_database: bool = Field(default=False)
     bundle_assets: bool = Field(default=True)
-    host: str = Field(default="127.0.0.1")
+    host: str = Field(default="192.168.178.45")
     port: int = Field(default=5000)
     forwarded_allow_ips: str = Field(default="*")
     lnbits_title: str = Field(default="LNbits API")
