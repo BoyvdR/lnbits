@@ -107,7 +107,7 @@ class ThemesSettings(LNbitsSettings):
 
 
 class OpsSettings(LNbitsSettings):
-    lnbits_baseurl: str = Field(default="http://127.0.0.1:5000/")
+    lnbits_baseurl: str = Field(default="http://192.168.178.45:5000/")
     lnbits_reserve_fee_min: int = Field(default=2000)
     lnbits_reserve_fee_percent: float = Field(default=1.0)
     lnbits_service_fee: float = Field(default=0)
